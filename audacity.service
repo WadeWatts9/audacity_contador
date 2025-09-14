@@ -1,0 +1,18 @@
+[Unit]
+Description=AUDACITY Contador System
+After=network.target
+
+[Service]
+Type=forking
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/audacity
+ExecStart=/var/www/audacity/start-audacity.sh start
+ExecStop=/var/www/audacity/start-audacity.sh stop
+ExecReload=/var/www/audacity/start-audacity.sh restart
+PIDFile=/var/www/audacity/logs/audacity.pid
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

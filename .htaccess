@@ -1,9 +1,14 @@
-# Configuración para Hostinger
+# Configuración para Hostinger con Node.js
 RewriteEngine On
 
 # Redirigir a HTTPS si está disponible
 RewriteCond %{HTTPS} off
 RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Configuración para Node.js - Redirigir a app.js
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ app.js [QSA,L]
 
 # Configurar headers de seguridad
 Header always set X-Content-Type-Options nosniff
@@ -36,7 +41,7 @@ Header always set X-XSS-Protection "1; mode=block"
 </IfModule>
 
 # Configurar página de error personalizada
-ErrorDocument 404 /index.html
+ErrorDocument 404 /index-realtime.html
 
 # Permitir archivos específicos
 <Files "package.json">
