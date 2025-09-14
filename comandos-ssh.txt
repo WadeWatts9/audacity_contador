@@ -1,0 +1,51 @@
+# ========================================
+# COMANDOS PARA EJECUTAR EN EL SERVIDOR
+# ========================================
+# Copia y pega estos comandos uno por uno en tu servidor SSH
+
+# 1. Conectar por SSH
+ssh root@82.25.66.210
+
+# 2. Descargar el script de instalación
+wget https://raw.githubusercontent.com/WadeWatts9/audacity_contador/main/install-remote.sh
+
+# 3. Hacer el script ejecutable
+chmod +x install-remote.sh
+
+# 4. Ejecutar la instalación
+./install-remote.sh
+
+# ========================================
+# COMANDOS ALTERNATIVOS (si el anterior falla)
+# ========================================
+
+# Si wget no funciona, usa curl:
+curl -O https://raw.githubusercontent.com/WadeWatts9/audacity_contador/main/install-remote.sh
+
+# O clona directamente el repositorio:
+git clone https://github.com/WadeWatts9/audacity_contador.git
+cd audacity_contador
+chmod +x install-remote.sh
+./install-remote.sh
+
+# ========================================
+# VERIFICACIÓN DESPUÉS DE LA INSTALACIÓN
+# ========================================
+
+# Verificar que la aplicación esté ejecutándose
+pm2 status
+
+# Ver logs
+pm2 logs audacity-contador
+
+# Verificar puerto
+netstat -tuln | grep 3000
+
+# Probar acceso web
+curl http://localhost:3000
+
+# ========================================
+# URLs DE ACCESO
+# ========================================
+# http://82.25.66.210:3000
+# http://82.25.66.210/audacity
