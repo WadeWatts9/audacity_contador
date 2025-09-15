@@ -56,6 +56,10 @@ io.on('connection', (socket) => {
         connectedUsers.set(socket.id, userData);
         socket.broadcast.emit('user_connected', userData);
         console.log(`Usuario ${userData.username} conectado`);
+        
+        // Enviar saldos actuales al usuario que se conecta
+        socket.emit('balances_update', balances);
+        console.log(`📊 Enviando saldos actuales a ${userData.username}:`, balances);
     });
 
     // Manejar actualización de saldos
@@ -91,6 +95,7 @@ io.on('connection', (socket) => {
         }
 
         // Enviar actualización a TODOS los clientes conectados
+        console.log('🔄 Enviando actualización a todos los clientes...');
         io.emit('balances_update', balances);
         
         // Notificar a todos sobre la operación realizada
@@ -102,8 +107,11 @@ io.on('connection', (socket) => {
             timestamp: new Date().toLocaleTimeString()
         });
         
-        console.log('Saldos actualizados y enviados a todos los clientes:', balances);
-        console.log(`Clientes conectados: ${io.engine.clientsCount}`);
+        console.log('✅ Saldos actualizados y enviados a todos los clientes:', balances);
+        console.log(`👥 Clientes conectados: ${io.engine.clientsCount}`);
+        
+        // Verificar que el objeto balances se esté actualizando correctamente
+        console.log('📊 Estado actual de balances:', JSON.stringify(balances, null, 2));
     });
 
     // Manejar desconexión

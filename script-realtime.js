@@ -47,8 +47,11 @@ class AudacityGameRealtime {
         // Escuchar actualizaciones de saldos
         this.socket.on('balances_update', (balances) => {
             console.log('📊 Recibida actualización de saldos:', balances);
+            console.log('📊 Saldos anteriores:', this.balances);
             this.balances = balances;
+            console.log('📊 Saldos actualizados en cliente:', this.balances);
             this.updateBalances();
+            console.log('✅ Interfaz actualizada');
         });
 
         // Escuchar notificaciones de usuarios conectados
@@ -63,6 +66,11 @@ class AudacityGameRealtime {
         // Escuchar notificaciones de operaciones
         this.socket.on('operation_notification', (data) => {
             this.showNotification(`${data.user} realizó ${data.operation} en ${data.counter} por $${data.amount}`, 'success');
+        });
+
+        // Función de debug para verificar sincronización
+        this.socket.on('debug_sync', (data) => {
+            console.log('🔍 Debug de sincronización:', data);
         });
     }
 
