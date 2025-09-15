@@ -1,3 +1,64 @@
+# ========================================
+# COMANDOS PARA EJECUTAR EN EL SERVIDOR
+# ========================================
+# Copia y pega estos comandos uno por uno en tu terminal SSH
+
+# 1. Conectarse al servidor (ejecutar desde tu PC)
+# ssh usuario@audacity.alancanto.net
+
+# 2. Navegar al directorio de la aplicación
+cd /public_html/audacity
+
+# 3. Crear backup de los archivos actuales
+cp .htaccess .htaccess.backup.$(date +%Y%m%d_%H%M%S)
+cp app.js app.js.backup.$(date +%Y%m%d_%H%M%S)
+
+# 4. Actualizar el archivo .htaccess
+cat > .htaccess << 'EOF'
+RewriteEngine On
+
+# Redirigir todas las peticiones a la aplicación Node.js
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ http://localhost:3000/$1 [P,L]
+
+# Configuración para WebSockets
+RewriteCond %{HTTP:Upgrade} websocket [NC]
+RewriteCond %{HTTP:Connection} upgrade [NC]
+RewriteRule ^(.*)$ ws://localhost:3000/$1 [P,L]
+
+# Forzar el uso del dominio correcto en la barra de direcciones
+# Redirigir cualquier IP o dominio incorrecto al dominio correcto
+RewriteCond %{HTTP_HOST} !^audacity\.alancanto\.net$ [NC]
+RewriteCond %{HTTP_HOST} !^www\.audacity\.alancanto\.net$ [NC]
+RewriteCond %{HTTP_HOST} !^localhost$ [NC]
+RewriteCond %{HTTP_HOST} !^127\.0\.0\.1$ [NC]
+RewriteRule ^(.*)$ https://audacity.alancanto.net/$1 [R=301,L]
+
+# Redirigir HTTP a HTTPS
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Headers para CORS
+Header always set Access-Control-Allow-Origin "*"
+Header always set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+Header always set Access-Control-Allow-Headers "Content-Type, Authorization"
+
+# Configuración de caché para archivos estáticos
+<FilesMatch "\.(css|js|png|jpg|jpeg|gif|ico|svg)$">
+    ExpiresActive On
+    ExpiresDefault "access plus 1 month"
+    Header set Cache-Control "public, max-age=2592000"
+</FilesMatch>
+
+# Configuración de seguridad
+Header always set X-Content-Type-Options nosniff
+Header always set X-Frame-Options DENY
+Header always set X-XSS-Protection "1; mode=block"
+EOF
+
+# 5. Actualizar el archivo app.js
+cat > app.js << 'EOF'
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
@@ -109,3 +170,39 @@ server.listen(PORT, () => {
 });
 
 module.exports = { app, server, io };
+EOF
+
+# 6. Habilitar módulos de Apache necesarios
+sudo a2enmod rewrite
+sudo a2enmod headers
+sudo a2enmod proxy
+sudo a2enmod proxy_http
+sudo a2enmod proxy_wstunnel
+
+# 7. Reiniciar Apache
+sudo systemctl restart apache2
+
+# 8. Verificar que Apache esté funcionando
+sudo systemctl status apache2
+
+# 9. Probar la configuración de Apache
+sudo apache2ctl configtest
+
+# 10. Reiniciar la aplicación Node.js (si está corriendo con PM2)
+pm2 restart audacity || pm2 start app.js --name audacity
+
+# 11. Verificar que la aplicación esté funcionando
+pm2 status
+
+# 12. Probar la redirección
+curl -I http://audacity.alancanto.net
+
+# 13. Verificar logs
+tail -f /var/log/apache2/error.log
+
+# ========================================
+# VERIFICACIÓN FINAL
+# ========================================
+echo "✅ Cambios aplicados correctamente"
+echo "🌐 Accede a: https://audacity.alancanto.net"
+echo "📱 Prueba en móvil y escritorio para verificar que la URL se mantiene"

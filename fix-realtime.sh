@@ -1,3 +1,22 @@
+#!/bin/bash
+
+# ========================================
+# SCRIPT PARA CORREGIR TIEMPO REAL
+# ========================================
+
+echo "🔧 Corrigiendo configuración de tiempo real..."
+
+# 1. Verificar estado actual
+echo "📊 Verificando estado de la aplicación..."
+pm2 status
+
+# 2. Crear backup
+echo "💾 Creando backup..."
+cp /root/audacity-contador/app.js /root/audacity-contador/app.js.backup
+
+# 3. Crear versión corregida
+echo "🔨 Creando versión corregida..."
+cat > /root/audacity-contador/app-fixed.js << 'EOF'
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
@@ -8,17 +27,11 @@ const server = http.createServer(app);
 const io = socketIo(server, {
     cors: {
         origin: "*",
-        methods: ["GET", "POST"]
-    }
-});
-
-// Middleware para forzar el uso del dominio correcto
-app.use((req, res, next) => {
-    // Si la petición viene de una IP o dominio incorrecto, redirigir al dominio correcto
-    if (req.hostname !== 'audacity.alancanto.net' && req.hostname !== 'www.audacity.alancanto.net') {
-        return res.redirect(301, `https://audacity.alancanto.net${req.originalUrl}`);
-    }
-    next();
+        methods: ["GET", "POST"],
+        allowedHeaders: ["*"],
+        credentials: true
+    },
+    transports: ['websocket', 'polling']
 });
 
 const PORT = process.env.PORT || 3000;
@@ -26,12 +39,12 @@ const PORT = process.env.PORT || 3000;
 // Servir archivos estáticos
 app.use(express.static(path.join(__dirname)));
 
-// Ruta principal - Redirigir a la versión de tiempo real
+// Ruta principal
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index-realtime.html'));
 });
 
-// Almacenar saldos en memoria (en producción usar base de datos)
+// Almacenar saldos en memoria
 let balances = {
     bank: 0,
     gallo: 10000,
@@ -86,9 +99,10 @@ io.on('connection', (socket) => {
             };
         }
 
-        // Enviar actualización a todos los clientes
+        // Enviar actualización a TODOS los clientes conectados
         io.emit('balances_update', balances);
         console.log('Saldos actualizados:', balances);
+        console.log('Usuarios conectados:', connectedUsers.size);
     });
 
     // Manejar desconexión
@@ -109,3 +123,26 @@ server.listen(PORT, () => {
 });
 
 module.exports = { app, server, io };
+EOF
+
+# 4. Aplicar cambios
+echo "🔄 Aplicando cambios..."
+cp /root/audacity-contador/app-fixed.js /root/audacity-contador/app.js
+
+# 5. Reiniciar aplicación
+echo "🚀 Reiniciando aplicación..."
+pm2 restart audacity-contador
+
+# 6. Verificar funcionamiento
+echo "✅ Verificando funcionamiento..."
+sleep 5
+pm2 status
+
+# 7. Verificar puerto
+echo "🔌 Verificando puerto..."
+netstat -tuln | grep :3000
+
+echo "🎉 Proceso completado!"
+echo "🌐 Prueba la aplicación en: http://82.25.66.210/"
+echo "👥 Abre múltiples pestañas para probar el tiempo real"
+
