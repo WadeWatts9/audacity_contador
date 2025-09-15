@@ -33,8 +33,20 @@ class AudacityGameRealtime {
         // Conectar a WebSocket
         this.socket = io();
         
+        // Verificar conexión
+        this.socket.on('connect', () => {
+            console.log('✅ Conectado al servidor WebSocket');
+            this.showNotification('Conectado al servidor', 'success');
+        });
+
+        this.socket.on('disconnect', () => {
+            console.log('❌ Desconectado del servidor WebSocket');
+            this.showNotification('Desconectado del servidor', 'error');
+        });
+        
         // Escuchar actualizaciones de saldos
         this.socket.on('balances_update', (balances) => {
+            console.log('📊 Recibida actualización de saldos:', balances);
             this.balances = balances;
             this.updateBalances();
         });
@@ -46,6 +58,11 @@ class AudacityGameRealtime {
 
         this.socket.on('user_disconnected', (userData) => {
             this.showNotification(`${userData.name} se ha desconectado`, 'info');
+        });
+
+        // Escuchar notificaciones de operaciones
+        this.socket.on('operation_notification', (data) => {
+            this.showNotification(`${data.user} realizó ${data.operation} en ${data.counter} por $${data.amount}`, 'success');
         });
     }
 

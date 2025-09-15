@@ -1,4 +1,4 @@
-const express = require('express');
+ los ueconst express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const path = require('path');
@@ -61,6 +61,10 @@ io.on('connection', (socket) => {
     // Manejar actualización de saldos
     socket.on('update_balance', (data) => {
         const { counter, amount, operation } = data;
+        const userData = connectedUsers.get(socket.id);
+        const userName = userData ? userData.username : 'Usuario desconocido';
+        
+        console.log(`Usuario ${userName} realizó operación: ${operation} en ${counter} por ${amount}`);
         
         if (operation === 'add') {
             balances[counter] += amount;
@@ -86,9 +90,20 @@ io.on('connection', (socket) => {
             };
         }
 
-        // Enviar actualización a todos los clientes
+        // Enviar actualización a TODOS los clientes conectados
         io.emit('balances_update', balances);
-        console.log('Saldos actualizados:', balances);
+        
+        // Notificar a todos sobre la operación realizada
+        io.emit('operation_notification', {
+            user: userName,
+            operation: operation,
+            counter: counter,
+            amount: amount,
+            timestamp: new Date().toLocaleTimeString()
+        });
+        
+        console.log('Saldos actualizados y enviados a todos los clientes:', balances);
+        console.log(`Clientes conectados: ${io.engine.clientsCount}`);
     });
 
     // Manejar desconexión
